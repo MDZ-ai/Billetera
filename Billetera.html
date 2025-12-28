@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lobus Bank v10.0 · Ultimate</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --primary: #6366f1;
+            --accent: #a855f7;
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --success: #22c55e;
+            /* Degradados */
+            --g-gold: linear-gradient(135deg, #f59e0b, #d97706);
+            --g-silver: linear-gradient(135deg, #94a3b8, #475569);
+            --g-bronze: linear-gradient(135deg, #b45309, #78350f);
+        }
+
+        * { box-sizing: border-box; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        body { 
+            font-family: 'Outfit', sans-serif; background: #020617; 
+            margin: 0; display: flex; justify-content: center; align-items: center; 
+            min-height: 100vh; color: var(--text-main); overflow: hidden;
+        }
+        
+        /* --- Contenedor Adaptable (PC/Móvil) --- */
+        #app {
+            width: 100%; max-width: 430px; height: 100vh;
+            background: var(--bg); position: relative;
+            display: flex; flex-direction: column; overflow: hidden;
+            box-shadow: 0 0 100px rgba(0,0,0,0.8);
+        }
+
+        @media (min-width: 768px) {
+            #app { height: 90vh; border-radius: 40px; border: 4px solid #334155; }
+        }
+
+        /* --- Pantallas --- */
+        .screen { display: none; padding: 25px; flex: 1; overflow-y: auto; padding-bottom: 110px; opacity: 0; transform: translateY(20px); }
+        .active { display: flex; flex-direction: column; opacity: 1; transform: translateY(0); }
+
+        /* --- Login & Estética --- */
+        .glass-input {
+            width: 100%; padding: 16px; border-radius: 16px; border: 1px solid #334155;
+            background: rgba(255,255,255,0.05); color: white; margin-bottom: 15px; font-family: inherit;
+        }
+        .btn-glow {
+            width: 100%; padding: 18px; border-radius: 18px; border: none;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white; font-weight: 800; cursor: pointer; font-size: 1rem;
+            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
+        }
+
+        /* --- Tarjeta de Riqueza --- */
+        .main-card {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            border-radius: 30px; padding: 30px; border: 1px solid #334155;
+            margin-bottom: 25px; position: relative; overflow: hidden;
+        }
+        .main-card::after {
+            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 70%);
+        }
+
+        /* --- Items de Lista --- */
+        .item-row {
+            background: var(--card-bg); padding: 15px; border-radius: 20px;
+            margin-bottom: 12px; display: flex; align-items: center; gap: 15px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        /* --- NFC RADAR --- */
+        #nfc-overlay {
+            position: absolute; inset: 0; background: rgba(15, 23, 42, 0.98);
+            z-index: 1000; display: none; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .radar {
+            width: 140px; height: 140px; border: 2px solid var(--primary);
+            border-radius: 50%; position: relative; display: flex; align-items: center; justify-content: center;
+        }
+        .wave {
+            position: absolute; inset: 0; border: 2px solid var(--primary);
+            border-radius: 50%; animation: pulse 2s infinite;
+        }
+        @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(2.5); opacity: 0; } }
+
+        /* --- Barra Navegación --- */
+        .nav {
+            position: absolute; bottom: 0; width: 100%; height: 90px;
+            background: rgba(30, 41, 59, 0.8); backdrop-filter: blur(20px);
+            display: flex; justify-content: space-around; align-items: center;
+            border-top: 1px solid #334155; padding-bottom: 10px;
+        }
+        .nav-item { color: var(--text-dim); text-align: center; cursor: pointer; font-size: 0.7rem; font-weight: 700; }
+        .nav-item.on { color: var(--primary); }
+        .nfc-btn {
+            width: 65px; height: 65px; background: var(--primary); color: white;
+            border-radius: 50%; margin-top: -50px; display: flex; align-items: center;
+            justify-content: center; font-size: 1.8rem; border: 5px solid var(--bg);
+            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.5);
+        }
+
+        /* --- Badges Ranking --- */
+        .rank-badge { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 800; }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <div id="scr-auth" class="screen active" style="justify-content: center; text-align: center;">
+        <div style="font-size: 4rem; margin-bottom: 10px;">🛡️</div>
+        <h1 style="margin: 0; font-size: 2.2rem; font-weight: 800;">Lobus ID</h1>
+        <p style="color: var(--text-dim); margin-bottom: 40px;">Ingresa a tu cuenta de líder</p>
+        
+        <input type="text" id="log-alias" class="glass-input" placeholder="Alias (@bibubib)">
+        <input type="password" id="log-pass" class="glass-input" placeholder="Contraseña">
+        <button class="btn-glow" onclick="core.login()">Autenticar</button>
+        <p style="font-size: 0.8rem; color: var(--text-dim); margin-top: 20px;">@bibubib (admin) | @lobitopeludito (lobo)</p>
+    </div>
+
+    <div id="scr-home" class="screen">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
+            <div>
+                <small style="color: var(--text-dim);">Patrimonio de</small>
+                <div id="ui-name" style="font-size: 1.4rem; font-weight: 800;">Líder</div>
+            </div>
+            <div style="width:45px; height:45px; border-radius:15px; background:var(--card-bg); display:flex; align-items:center; justify-content:center; font-size:1.5rem;">🐺</div>
+        </div>
+
+        <div class="main-card">
+            <div id="ui-role" style="font-size:0.6rem; letter-spacing:2px; color:var(--primary); font-weight:800; margin-bottom:10px;">CARGO SUPREMO</div>
+            <div id="ui-total" style="font-size: 2.2rem; font-weight: 800; word-break: break-all;">0 LBX</div>
+            <div style="margin-top:20px; display:flex; gap:10px;">
+                <button onclick="core.loan()" style="background:rgba(99,102,241,0.2); border:none; color:var(--primary); padding:8px 15px; border-radius:10px; font-weight:700; font-size:0.7rem;">Solicitar Liquidez</button>
+            </div>
+        </div>
+
+        <h3 style="font-size: 1rem; margin-bottom: 15px;">Mis Bóvedas</h3>
+        <div id="bank-list"></div>
+    </div>
+
+    <div id="scr-rank" class="screen">
+        <h1>Global Ranking 🏆</h1>
+        <div id="rank-list"></div>
+    </div>
+
+    <div id="scr-tx" class="screen">
+        <h1>Transferir</h1>
+        <label style="font-size:0.7rem; color:var(--text-dim); margin-left:10px;">ORIGEN</label>
+        <select id="tx-src" class="glass-input"></select>
+        <label style="font-size:0.7rem; color:var(--text-dim); margin-left:10px;">DESTINATARIO</label>
+        <input type="text" id="tx-dest" class="glass-input" placeholder="@alias">
+        <label style="font-size:0.7rem; color:var(--text-dim); margin-left:10px;">MONTO LBX</label>
+        <input type="number" id="tx-amt" class="glass-input" placeholder="0.00">
+        <label style="font-size:0.7rem; color:var(--text-dim); margin-left:10px;">PIN</label>
+        <input type="password" id="tx-pin" class="glass-input" placeholder="****">
+        <button class="btn-glow" onclick="core.transfer()">Confirmar Envío</button>
+    </div>
+
+    <div id="nfc-overlay">
+        <div class="radar">
+            <div class="wave"></div>
+            <div class="wave" style="animation-delay:0.5s"></div>
+            <span style="font-size: 3.5rem; z-index: 10;">📡</span>
+        </div>
+        <h2 style="margin-top:40px;">Pago Contactless</h2>
+        <p style="color:var(--text-dim);">Aproxima al terminal de pago...</p>
+        <button onclick="ui.closeNFC()" style="margin-top:40px; background:none; border:1px solid #334155; color:white; padding:10px 20px; border-radius:12px; cursor:pointer;">Cancelar</button>
+    </div>
+
+    <nav class="nav" id="main-nav" style="display:none">
+        <div class="nav-item on" onclick="ui.nav('home')">🏠<br>Inicio</div>
+        <div class="nav-item" onclick="ui.nav('rank')">📊<br>Ranking</div>
+        <div class="nfc-btn" onclick="ui.openNFC()">📡</div>
+        <div class="nav-item" onclick="ui.nav('tx')">💸<br>Enviar</div>
+        <div class="nav-item" onclick="location.reload()">🔒<br>Salir</div>
+    </nav>
+</div>
+
+<script>
+    const WORLD = {
+        lobito: { n: "País Lobito 🐺", b: ["Banco Lobito", "Banco Bibu", "Banco Colmillo"] },
+        oso: { n: "País Oso 🐻", b: ["Banco GAGA", "Banco Garra"] },
+        pajarito: { n: "País Pajarito 🐦", b: ["Nido Bank"] },
+        higor: { n: "País Higor 🐲", b: ["Imperial Higor"] }
+    };
+
+    const core = {
+        user: null, users: [],
+
+        init() {
+            const data = localStorage.getItem('lobus_v10');
+            if(data) this.users = JSON.parse(data);
+            else this.setup();
+        },
+
+        setup() {
+            // Riqueza legendaria para Bibu y Lobito
+            const allB = {}; Object.values(WORLD).forEach(c => c.b.forEach(b => allB[b] = 100000000000));
+            this.users = [
+                { name: "Bibubib", alias: "@bibubib", pass: "admin", pin: "1234", role: "Presidente Supremo", accounts: {...allB} },
+                { name: "Lobito Peludito", alias: "@lobitopeludito", pass: "lobo", pin: "0000", role: "Líder Potencia", accounts: {"Banco Lobito": 500000000000, "Banco Bibu": 400000000000} },
+                { name: "Oso Pepe", alias: "@osopepe", pass: "oso", pin: "1111", role: "Líder Oso", accounts: {"Banco GAGA": 1000000, "Banco Garra": 500000} }
+            ];
+            this.save();
+        },
+
+        save() { localStorage.setItem('lobus_v10', JSON.stringify(this.users)); },
+
+        login() {
+            const a = document.getElementById('log-alias').value;
+            const p = document.getElementById('log-pass').value;
+            const u = this.users.find(x => x.alias === a && x.pass === p);
+            if(u) { this.user = u; ui.showApp(); } else { alert("❌ Credenciales inválidas"); }
+        },
+
+        loan() {
+            const amt = 5000000;
+            const b = Object.keys(this.user.accounts)[0];
+            this.user.accounts[b] += amt;
+            this.save();
+            ui.renderHome();
+            alert("✅ Inyección de 5M LBX completada");
+        },
+
+        transfer() {
+            const src = document.getElementById('tx-src').value;
+            const dst = document.getElementById('tx-dest').value;
+            const amt = parseFloat(document.getElementById('tx-amt').value);
+            const pin = document.getElementById('tx-pin').value;
+
+            if(pin !== this.user.pin) return alert("❌ PIN incorrecto");
+            if(this.user.accounts[src] < amt) return alert("❌ Saldo insuficiente");
+            
+            const target = this.users.find(u => u.alias === dst);
+            if(!target) return alert("❌ Destinatario no encontrado");
+
+            this.user.accounts[src] -= amt;
+            const tBank = Object.keys(target.accounts)[0] || "Banco Lobito";
+            target.accounts[tBank] = (target.accounts[tBank] || 0) + amt;
+            this.save();
+            ui.nav('home');
+            alert("✨ Transferencia exitosa");
+        }
+    };
+
+    const ui = {
+        nav(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('scr-' + id).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('on'));
+            if(id === 'home') this.renderHome();
+            if(id === 'rank') this.renderRank();
+        },
+
+        showApp() {
+            document.getElementById('scr-auth').classList.remove('active');
+            document.getElementById('main-nav').style.display = 'flex';
+            this.nav('home');
+        },
+
+        renderHome() {
+            const u = core.user;
+            document.getElementById('ui-name').innerText = u.name;
+            document.getElementById('ui-role').innerText = u.role.toUpperCase();
+            const list = document.getElementById('bank-list');
+            const sel = document.getElementById('tx-src');
+            list.innerHTML = ''; sel.innerHTML = '';
+            let total = 0;
+
+            for(const k in WORLD) {
+                WORLD[k].b.forEach(bn => {
+                    const bal = u.accounts[bn] || 0;
+                    total += bal;
+                    if(bal > 0 || u.alias === "@bibubib") {
+                        list.innerHTML += `
+                            <div class="item-row">
+                                <div style="width:40px; height:40px; background:var(--primary); border-radius:10px; display:flex; align-items:center; justify-content:center; font-weight:800;">${bn[0]}</div>
+                                <div style="flex:1">
+                                    <div style="font-weight:700; font-size:0.9rem;">${bn}</div>
+                                    <div style="font-size:0.7rem; color:var(--text-dim);">${WORLD[k].n}</div>
+                                </div>
+                                <div style="font-weight:800; font-size:0.9rem;">${bal.toLocaleString()}</div>
+                            </div>`;
+                        sel.innerHTML += `<option value="${bn}">${bn}</option>`;
+                    }
+                });
+            }
+            document.getElementById('ui-total').innerText = total.toLocaleString() + " LBX";
+        },
+
+        renderRank() {
+            const list = document.getElementById('rank-list');
+            const sorted = [...core.users].sort((a,b) => 
+                Object.values(b.accounts).reduce((s,v)=>s+v,0) - Object.values(a.accounts).reduce((s,v)=>s+v,0)
+            );
+            list.innerHTML = sorted.map((u, i) => {
+                const total = Object.values(u.accounts).reduce((s,v)=>s+v,0);
+                let badgeColor = "var(--card-bg)";
+                if(i===0) badgeColor = "var(--g-gold)";
+                if(i===1) badgeColor = "var(--g-silver)";
+                if(i===2) badgeColor = "var(--g-bronze)";
+                return `
+                    <div class="item-row">
+                        <div class="rank-badge" style="background:${badgeColor}">${i+1}</div>
+                        <div style="flex:1; font-weight:700;">${u.name}</div>
+                        <div style="color:var(--primary); font-weight:800;">${total.toLocaleString()}</div>
+                    </div>`;
+            }).join('');
+        },
+
+        openNFC() {
+            document.getElementById('nfc-overlay').style.display = 'flex';
+            setTimeout(() => {
+                this.closeNFC();
+                const b = Object.keys(core.user.accounts)[0];
+                core.user.accounts[b] -= 1500;
+                core.save();
+                this.renderHome();
+                alert("✅ Pago NFC realizado: -1,500 LBX");
+            }, 3000);
+        },
+
+        closeNFC() { document.getElementById('nfc-overlay').style.display = 'none'; }
+    };
+
+    core.init();
+</script>
+</body>
+</html>
